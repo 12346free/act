@@ -1,19 +1,29 @@
-name: Run on Windows
+name: Enable RDP on GitHub Actions
 
 on:
   workflow_dispatch:
 
 jobs:
-  windows-job:
-    runs-on: windows-latest # 或者 windows-2022
+  enable-rdp:
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Run Windows commands
+      - name: Enable RDP
         run: |
-          echo "Running on Windows Server (compatible with Windows 11)"
-          systeminfo
-          dir
-        shell: powershell
+          # 启用远程桌面
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+
+          # 添加防火墙规则，允许 RDP 流量
+          netsh advfirewall firewall add rule name="Open RDP" protocol=TCP dir=in localport=3389 action=allow
+
+          # 设置用户和密码
+          net user githubuser StrongPassword123! /add
+          net localgroup administrators githubuser /add
+          
+          # 启动 RDP 服务
+          Set-Service -Name TermService -StartupType Automatic
+          Start-Service -Name TermService
+          
+      - name: Show Public IP
+        run: |
+          curl ifconfig.me
