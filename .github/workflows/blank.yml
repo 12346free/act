@@ -1,4 +1,4 @@
-name: Enable SSH Access
+name: ZeroTier SSH
 
 on:
   workflow_dispatch: # 手动触发
@@ -6,6 +6,7 @@ on:
 jobs:
   setup-ssh:
     runs-on: ubuntu-latest
+
     steps:
       - name: Install SSH Server
         run: |
@@ -17,13 +18,13 @@ jobs:
           echo "root:github123" | sudo chpasswd
           sudo service ssh start
 
-      - name: Setup ngrok for SSH
+      - name: Install ZeroTier
         run: |
-          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
-          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && \
-          sudo apt update && sudo apt install -y ngrok
-          ngrok authtoken 2mVpuAlq58qKDkEuXyJzummIaYb_7JDTqgoGpsCrQB2NVUwWM
-          nohup ngrok tcp 22 &
+          curl -s https://install.zerotier.com | sudo bash
+          sudo zerotier-cli join 8bd5124fd6462eb6
+          sleep 10
+          sudo zerotier-cli listpeers
 
-      - name: Display SSH Address
-        run: sleep 10 && curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' || echo "Failed to retrieve ngrok URL"
+      - name: Display ZeroTier IP
+        run: |
+          sudo zerotier-cli listnetworks | grep -oP '10\.\d+\.\d+\.\d+'
