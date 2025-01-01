@@ -1,7 +1,7 @@
-name: Enable RDP on GitHub Actions
+name: Enable RDP on Windows
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 手动触发工作流
 
 jobs:
   enable-rdp:
@@ -16,14 +16,20 @@ jobs:
           # 添加防火墙规则，允许 RDP 流量
           netsh advfirewall firewall add rule name="Open RDP" protocol=TCP dir=in localport=3389 action=allow
 
-          # 设置用户和密码
-          net user githubuser StrongPassword123! /add
+          # 创建用户并设置短密码
+          net user githubuser StrongPwd123! /add
           net localgroup administrators githubuser /add
-          
+
           # 启动 RDP 服务
           Set-Service -Name TermService -StartupType Automatic
           Start-Service -Name TermService
-          
+
+      - name: Verify User Creation
+        run: |
+          # 检查用户是否成功创建
+          net user githubuser
+
       - name: Show Public IP
         run: |
+          # 输出虚拟机的公网 IP 地址
           curl ifconfig.me
