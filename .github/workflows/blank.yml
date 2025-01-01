@@ -1,0 +1,29 @@
+name: Enable SSH Access
+
+on:
+  workflow_dispatch: # 手动触发
+
+jobs:
+  setup-ssh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install SSH Server
+        run: |
+          sudo apt update
+          sudo apt install -y openssh-server
+          sudo mkdir /run/sshd
+          echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
+          echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+          echo "root:github123" | sudo chpasswd
+          sudo service ssh start
+
+      - name: Setup ngrok for SSH
+        run: |
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && \
+          sudo apt update && sudo apt install -y ngrok
+          ngrok authtoken <你的_ngrok_token>
+          nohup ngrok tcp 22 &
+
+      - name: Display SSH Address
+        run: sleep 10 && curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' || echo "Failed to retrieve ngrok URL"
